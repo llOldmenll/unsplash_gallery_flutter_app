@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'grid_page.dart';
 
 void main() => runApp(new MyApp());
 
@@ -8,10 +9,11 @@ class MyApp extends StatelessWidget {
     return new MaterialApp(
       title: 'Flutter Demo',
       theme: new ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.blueGrey,
       ),
-//      home: ,
+      home: Scaffold(
+        body: GridPage(),
+      ),
     );
   }
-
 }
