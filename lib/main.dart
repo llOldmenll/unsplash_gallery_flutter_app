@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'grid_page.dart';
+
+import 'package:unsplash_gallery_flutter_app/presentation/grid_page.dart';
+import 'routes.dart';
 
 void main() => runApp(new MyApp());
 
@@ -14,6 +16,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         body: GridPage(),
       ),
+      routes: routes,
     );
   }
 }
