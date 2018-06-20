@@ -2,87 +2,100 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+import 'image.dart';
+
 class GridPage extends StatefulWidget {
   @override
   createState() => _GridPageState();
 }
 
 class _GridPageState extends State<GridPage> {
-  static const images = [
-    'https://images.unsplash.com/photo-1527623976783-97861c6feff6?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=2901a95f0d1db7c86f3257661cbf849a&auto=format&fit=crop&w=2100&q=80',
-    'https://images.unsplash.com/photo-1511445253557-ea91bb5007dc?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=83d7c88bc4d8aa7c5825f3dc3b6f1403&auto=format&fit=crop&w=934&q=80',
-    'https://images.unsplash.com/photo-1491719302159-fcdf021abd5c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=edec06b3daef51c2ad631da14044445e&auto=format&fit=crop&w=2146&q=80',
-    'https://images.unsplash.com/photo-1496348323715-c11f0fc6aeed?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=c0ca46c79b905ff053eb904a86c3b1cc&auto=format&fit=crop&w=1294&q=80',
-    'https://images.unsplash.com/photo-1527623976783-97861c6feff6?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=2901a95f0d1db7c86f3257661cbf849a&auto=format&fit=crop&w=2100&q=80',
-    'https://images.unsplash.com/photo-1511445253557-ea91bb5007dc?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=83d7c88bc4d8aa7c5825f3dc3b6f1403&auto=format&fit=crop&w=934&q=80',
-    'https://images.unsplash.com/photo-1491719302159-fcdf021abd5c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=edec06b3daef51c2ad631da14044445e&auto=format&fit=crop&w=2146&q=80',
-    'https://images.unsplash.com/photo-1496348323715-c11f0fc6aeed?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=c0ca46c79b905ff053eb904a86c3b1cc&auto=format&fit=crop&w=1294&q=80',
-    'https://images.unsplash.com/photo-1527623976783-97861c6feff6?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=2901a95f0d1db7c86f3257661cbf849a&auto=format&fit=crop&w=2100&q=80',
-    'https://images.unsplash.com/photo-1511445253557-ea91bb5007dc?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=83d7c88bc4d8aa7c5825f3dc3b6f1403&auto=format&fit=crop&w=934&q=80',
-    'https://images.unsplash.com/photo-1491719302159-fcdf021abd5c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=edec06b3daef51c2ad631da14044445e&auto=format&fit=crop&w=2146&q=80',
-    'https://images.unsplash.com/photo-1496348323715-c11f0fc6aeed?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=c0ca46c79b905ff053eb904a86c3b1cc&auto=format&fit=crop&w=1294&q=80',
-    'https://images.unsplash.com/photo-1527623976783-97861c6feff6?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=2901a95f0d1db7c86f3257661cbf849a&auto=format&fit=crop&w=2100&q=80',
-    'https://images.unsplash.com/photo-1511445253557-ea91bb5007dc?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=83d7c88bc4d8aa7c5825f3dc3b6f1403&auto=format&fit=crop&w=934&q=80',
-    'https://images.unsplash.com/photo-1491719302159-fcdf021abd5c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=edec06b3daef51c2ad631da14044445e&auto=format&fit=crop&w=2146&q=80',
-    'https://images.unsplash.com/photo-1496348323715-c11f0fc6aeed?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=c0ca46c79b905ff053eb904a86c3b1cc&auto=format&fit=crop&w=1294&q=80',
-    'https://images.unsplash.com/photo-1527623976783-97861c6feff6?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=2901a95f0d1db7c86f3257661cbf849a&auto=format&fit=crop&w=2100&q=80',
-    'https://images.unsplash.com/photo-1511445253557-ea91bb5007dc?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=83d7c88bc4d8aa7c5825f3dc3b6f1403&auto=format&fit=crop&w=934&q=80',
-    'https://images.unsplash.com/photo-1491719302159-fcdf021abd5c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=edec06b3daef51c2ad631da14044445e&auto=format&fit=crop&w=2146&q=80',
-    'https://images.unsplash.com/photo-1496348323715-c11f0fc6aeed?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=c0ca46c79b905ff053eb904a86c3b1cc&auto=format&fit=crop&w=1294&q=80',
-    'https://images.unsplash.com/photo-1527623976783-97861c6feff6?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=2901a95f0d1db7c86f3257661cbf849a&auto=format&fit=crop&w=2100&q=80',
-    'https://images.unsplash.com/photo-1511445253557-ea91bb5007dc?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=83d7c88bc4d8aa7c5825f3dc3b6f1403&auto=format&fit=crop&w=934&q=80',
-    'https://images.unsplash.com/photo-1491719302159-fcdf021abd5c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=edec06b3daef51c2ad631da14044445e&auto=format&fit=crop&w=2146&q=80',
-    'https://images.unsplash.com/photo-1496348323715-c11f0fc6aeed?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=c0ca46c79b905ff053eb904a86c3b1cc&auto=format&fit=crop&w=1294&q=80',
-    'https://images.unsplash.com/photo-1527623976783-97861c6feff6?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=2901a95f0d1db7c86f3257661cbf849a&auto=format&fit=crop&w=2100&q=80',
-    'https://images.unsplash.com/photo-1511445253557-ea91bb5007dc?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=83d7c88bc4d8aa7c5825f3dc3b6f1403&auto=format&fit=crop&w=934&q=80',
-    'https://images.unsplash.com/photo-1491719302159-fcdf021abd5c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=edec06b3daef51c2ad631da14044445e&auto=format&fit=crop&w=2146&q=80',
-    'https://images.unsplash.com/photo-1496348323715-c11f0fc6aeed?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=c0ca46c79b905ff053eb904a86c3b1cc&auto=format&fit=crop&w=1294&q=80',
-  ];
+  List<ImageUnsplash> _images = List();
 
-  List<Container> _buildGridTileList() {
-    return new List<Container>.generate(
-      images.length,
-      (int index) => new Container(
-            child: CachedNetworkImage(
-              imageUrl: images[index],
-              fit: BoxFit.cover,
-            ),
-          ),
+  int _pageNumber = 1;
+  bool _isLoading = false;
+
+  Container _buildGridTile(ImageUnsplash img) {
+    return new Container(
+      child: CachedNetworkImage(
+        imageUrl: img.thumbImgUrl,
+        fit: BoxFit.cover,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverAppBar(
-//            forceElevated: true,
-            snap: true,
-            floating: true,
-            elevation: 8.0,
-            title: Text('Grid Test'),
-          ),
-          SliverStaggeredGrid.countBuilder(
-//            mainAxisSpacing: 4.0,
-//            crossAxisSpacing: 4.0,
-
-//            children: _buildGridTileList(),
-//            maxCrossAxisExtent: 300.0,
-            staggeredTileBuilder: (int index) =>
-                new StaggeredTile.count(2, index.isEven ? 4 : 3),
-            itemBuilder: (BuildContext context, int index) => new Container(
-                  padding: EdgeInsets.all(4.0),
-                  child: CachedNetworkImage(
-                    imageUrl: images[index],
-                    fit: BoxFit.cover,
-                  ),
-                ),
-            crossAxisCount: 4,
-            itemCount: images.length,
-          ),
-        ],
+      body: new FutureBuilder<List<ImageUnsplash>>(
+        future: fetchGet(),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (snapshot.hasError) print(snapshot.error);
+          if (snapshot.hasData && _pageNumber == 1)
+            _images.addAll(snapshot.data);
+          return snapshot.hasData
+              ? _photosGrid()
+              : Center(child: CircularProgressIndicator());
+        },
       ),
     );
+  }
+
+  Widget _photosGrid() {
+    return CustomScrollView(
+      slivers: <Widget>[
+        SliverAppBar(
+          snap: true,
+          floating: true,
+          elevation: 8.0,
+          title: Text('Grid Test'),
+        ),
+        SliverStaggeredGrid.countBuilder(
+          staggeredTileBuilder: (int index) =>
+              new StaggeredTile.count(2, index.isEven ? 4 : 3),
+          itemBuilder: (BuildContext context, int index) {
+            if (index >= (_images.length - 10) && !_isLoading) {
+              _isLoading = true;
+              _pageNumber += 1;
+              fetchGet().then((imagesList) {
+                setState(() {
+                  _images.addAll(imagesList);
+                  _isLoading = false;
+                });
+                print(
+                    'Page = $_pageNumber. Images List length = ${_images.length}');
+              });
+            }
+            return _buildGridTile(_images[index]);
+          },
+          crossAxisCount: 4,
+          itemCount: _images.length,
+        ),
+      ],
+    );
+  }
+
+  Future<List<ImageUnsplash>> fetchGet() async {
+    print("------ fetchGet() - START LOAD");
+    List<ImageUnsplash> images = List();
+    Map<String, String> headers = Map();
+    headers['Accept-Version'] = 'v1';
+    headers['Authorization'] =
+        'Client-ID 176a609651fb9ae514b26ceade8b6e2df8f82479213a4fb1332d4d383e9640ff';
+
+    final response = await http.get(
+        'https://api.unsplash.com/photos?page=$_pageNumber&per_page=20',
+        headers: headers);
+    final responseJson = json.decode(response.body);
+
+    for (var obj in responseJson) {
+      images.add(ImageUnsplash.fromJson(obj));
+    }
+
+    return images;
   }
 }
