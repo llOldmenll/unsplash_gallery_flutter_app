@@ -10,7 +10,7 @@ class RestfulApiUtils {
 
   Future<dynamic> get(String url, Map<String, String> headers) async {
     final response = await http.get(url, headers: headers);
-    _checkStatusCode(response.statusCode);
+    _checkStatusCode(response.statusCode, response.headers.toString());
     return json.decode(response.body);
   }
 
@@ -18,13 +18,14 @@ class RestfulApiUtils {
     return http
         .post(url, body: body, headers: headers, encoding: encoding)
         .then((http.Response response) {
-      _checkStatusCode(response.statusCode);
+      _checkStatusCode(response.statusCode, response.headers.toString());
       return json.decode(response.body);
     });
   }
 
-  void _checkStatusCode(int statusCode){
+  void _checkStatusCode(int statusCode, String headers){
     if (statusCode < 200 || statusCode > 400 || json == null) {
+      print(headers);
       throw new Exception("Error while fetching data");
     }
   }

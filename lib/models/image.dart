@@ -3,15 +3,12 @@ class ImageUnsplash {
   final String _authorName;
   final String _thumbImgUrl;
   final String _fullImgUrl;
+  bool _isFavorite;
 
-  ImageUnsplash(
-      this._imgId, this._authorName, this._thumbImgUrl, this._fullImgUrl);
 
-  String get fullImgUrl => _fullImgUrl;
+  ImageUnsplash(this._imgId, this._authorName, this._thumbImgUrl,
+      this._fullImgUrl, [this._isFavorite = false]);
 
-  String get thumbImgUrl => _thumbImgUrl;
-
-  String get authorName => _authorName;
 
   String get imgId => _imgId;
 
@@ -23,6 +20,18 @@ class ImageUnsplash {
       urls['small'],
       urls['regular'],
     );
+  }
+
+  String get authorName => _authorName;
+
+  String get thumbImgUrl => _thumbImgUrl;
+
+  String get fullImgUrl => _fullImgUrl;
+
+  bool get isFavorite => _isFavorite;
+
+  set isFavorite(bool value) {
+    _isFavorite = value;
   }
 
   @override
