@@ -4,7 +4,9 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'package:unsplash_gallery_flutter_app/models/image.dart';
 import 'package:unsplash_gallery_flutter_app/data/network/unsplash_api_client.dart';
+import 'package:unsplash_gallery_flutter_app/models/images_provider.dart';
 import 'package:unsplash_gallery_flutter_app/colors.dart';
+import 'pager_page.dart';
 
 class GridPage extends StatefulWidget {
   static final String tag = 'grid_page';
@@ -25,9 +27,20 @@ class _GridPageState extends State<GridPage> {
       child: Stack(
         children: <Widget>[
           Positioned(
-            child: CachedNetworkImage(
-              imageUrl: img.thumbImgUrl,
-              fit: BoxFit.cover,
+            child: GestureDetector(
+              onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (BuildContext context) =>
+                            PagerPage(_images, favorites, position)),
+                  ),
+              child: Hero(
+                tag: img.imgId,
+                child: CachedNetworkImage(
+                  imageUrl: img.thumbImgUrl,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
             left: 0.0,
             right: 0.0,
@@ -40,13 +53,13 @@ class _GridPageState extends State<GridPage> {
             bottom: 0.0,
             child: GestureDetector(
               onTap: () => setState(() {
-                print('GestureDetector onTap');
-                img.isFavorite = !img.isFavorite;
-                if(img.isFavorite)
-                  favorites[img.imgId] = img;
-                else if(favorites.containsKey(img.imgId))
-                  favorites.remove(img.imgId);
-              }),
+                    print('GestureDetector onTap');
+                    img.isFavorite = !img.isFavorite;
+                    if (img.isFavorite)
+                      favorites[img.imgId] = img;
+                    else if (favorites.containsKey(img.imgId))
+                      favorites.remove(img.imgId);
+                  }),
               child: Container(
                 height: 35.0,
                 padding: EdgeInsets.only(left: 8.0, right: 8.0),
@@ -54,16 +67,17 @@ class _GridPageState extends State<GridPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    new Container(
-                      width: 140.0,
-                      child: Text(
-                        img.authorName,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            color: colorWhite,
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.bold),
-                        maxLines: 1,
+                    Expanded(
+                      child: Container(
+                        child: Text(
+                          img.authorName,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: colorWhite,
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                        ),
                       ),
                     ),
                     Icon(
@@ -94,19 +108,19 @@ class _GridPageState extends State<GridPage> {
           elevation: 8.0,
           title: Text('Unsplash Gallery'),
         ),
-        new SliverPadding(
+        SliverPadding(
           padding: const EdgeInsets.only(left: 2.0, right: 2.0),
           sliver: SliverStaggeredGrid.countBuilder(
             staggeredTileBuilder: (int index) =>
-                new StaggeredTile.count(2, index.isEven ? 3 : 2),
+                StaggeredTile.count(2, index.isEven ? 3 : 2),
             itemBuilder: (BuildContext context, int index) {
               if (index >= (_images.length - 10) && !_isLoading) {
                 _isLoading = true;
-                _pageNumber += 1;
-                _apiClient.getAllImages(_pageNumber).then((imagesList) {
+                _apiClient.getAllImages(_pageNumber + 1).then((imagesList) {
                   setState(() {
                     _images.addAll(imagesList);
                     _isLoading = false;
+                    _pageNumber += 1;
                   });
                   print(
                       'Page = $_pageNumber. Images List length = ${_images.length}');
@@ -124,13 +138,16 @@ class _GridPageState extends State<GridPage> {
 
   @override
   Widget build(BuildContext context) {
+    final imagesProvider = ImagesProvider.of(context);
     return Scaffold(
-      body: new FutureBuilder<List<ImageUnsplash>>(
+      body: FutureBuilder<List<ImageUnsplash>>(
         future: _apiClient.getAllImages(_pageNumber),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.hasError) print(snapshot.error);
-          if (snapshot.hasData && _pageNumber == 1)
+          if (snapshot.hasData && _images.length == 0) {
             _images.addAll(snapshot.data);
+//            _pageNumber += 1;
+          }
           return snapshot.hasData
               ? _photosGrid()
               : Center(child: CircularProgressIndicator());
