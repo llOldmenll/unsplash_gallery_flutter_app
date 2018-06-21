@@ -5,6 +5,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:unsplash_gallery_flutter_app/models/image.dart';
 import 'package:unsplash_gallery_flutter_app/data/network/unsplash_api_client.dart';
 import 'package:unsplash_gallery_flutter_app/models/images_provider.dart';
+import 'package:unsplash_gallery_flutter_app/models/images_bloc.dart';
 import 'package:unsplash_gallery_flutter_app/colors.dart';
 import 'pager_page.dart';
 
@@ -15,7 +16,6 @@ class GridPage extends StatefulWidget {
 }
 
 class _GridPageState extends State<GridPage> {
-  List<ImageUnsplash> _images = List();
   Map<String, ImageUnsplash> favorites = Map();
   UnsplashApiClient _apiClient = UnsplashApiClient();
   int _pageNumber = 1;
@@ -32,7 +32,7 @@ class _GridPageState extends State<GridPage> {
                     context,
                     MaterialPageRoute(
                         builder: (BuildContext context) =>
-                            PagerPage(_images, favorites, position)),
+                            PagerPage(favorites, position)),
                   ),
               child: Hero(
                 tag: img.imgId,
@@ -98,58 +98,62 @@ class _GridPageState extends State<GridPage> {
     );
   }
 
-  Widget _photosGrid() {
-    return CustomScrollView(
-      slivers: <Widget>[
-        SliverAppBar(
-          automaticallyImplyLeading: true,
-          snap: true,
-          floating: true,
-          elevation: 8.0,
-          title: Text('Unsplash Gallery'),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 2.0, right: 2.0),
-          sliver: SliverStaggeredGrid.countBuilder(
-            staggeredTileBuilder: (int index) =>
-                StaggeredTile.count(2, index.isEven ? 3 : 2),
-            itemBuilder: (BuildContext context, int index) {
-              if (index >= (_images.length - 10) && !_isLoading) {
-                _isLoading = true;
-                _apiClient.getAllImages(_pageNumber + 1).then((imagesList) {
-                  setState(() {
-                    _images.addAll(imagesList);
-                    _isLoading = false;
-                    _pageNumber += 1;
-                  });
+  Widget _photosGrid(ImagesBloc imagesBloc) {
+    return StreamBuilder<List<ImageUnsplash>>(
+      stream: imagesBloc.allImages,
+      initialData: List<ImageUnsplash>(),
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        return CustomScrollView(
+          slivers: <Widget>[
+            SliverAppBar(
+              automaticallyImplyLeading: true,
+              snap: true,
+              floating: true,
+              elevation: 8.0,
+              title: Text('Unsplash Gallery'),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.only(left: 2.0, right: 2.0),
+              sliver: SliverStaggeredGrid.countBuilder(
+                staggeredTileBuilder: (int index) =>
+                    StaggeredTile.count(2, index.isEven ? 3 : 2),
+                itemBuilder: (BuildContext context, int index) {
+                  var images = snapshot.data;
                   print(
-                      'Page = $_pageNumber. Images List length = ${_images.length}');
-                });
-              }
-              return _buildGridTile(index, _images[index]);
-            },
-            crossAxisCount: 4,
-            itemCount: _images.length,
-          ),
-        ),
-      ],
+                      'Page = $_pageNumber. Images List length = ${snapshot.data.length}');
+                  if (index >= (images.length - 10) && !_isLoading) {
+                    _isLoading = true;
+                    _apiClient
+                        .getAllImages(_pageNumber += 1)
+                        .then((imagesList) {
+                      imagesBloc.addition.add(imagesList);
+                      _isLoading = false;
+                    });
+                  }
+                  return _buildGridTile(index, images[index]);
+                },
+                crossAxisCount: 4,
+                itemCount: snapshot.data == null ? 0 : snapshot.data.length,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final imagesProvider = ImagesProvider.of(context);
+    final imagesBloc = ImagesProvider.of(context);
     return Scaffold(
       body: FutureBuilder<List<ImageUnsplash>>(
         future: _apiClient.getAllImages(_pageNumber),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.hasError) print(snapshot.error);
-          if (snapshot.hasData && _images.length == 0) {
-            _images.addAll(snapshot.data);
-//            _pageNumber += 1;
-          }
+          if (snapshot.hasData && _pageNumber == 1)
+            imagesBloc.addition.add(snapshot.data);
           return snapshot.hasData
-              ? _photosGrid()
+              ? _photosGrid(imagesBloc)
               : Center(child: CircularProgressIndicator());
         },
       ),

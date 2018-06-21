@@ -12,6 +12,7 @@ class UnsplashApiClient {
   RestfulApiUtils _utils = RestfulApiUtils();
 
   Future<List<ImageUnsplash>> getAllImages(int page) async {
+    print('--getAllImages, page = $page');
     final url = _BASE_URL + 'photos?page=$page&per_page=20';
     List<ImageUnsplash> images = List();
 
