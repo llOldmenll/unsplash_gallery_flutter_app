@@ -4,72 +4,77 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:unsplash_gallery_flutter_app/models/image.dart';
 import 'package:unsplash_gallery_flutter_app/colors.dart';
 import 'package:unsplash_gallery_flutter_app/models/images_provider.dart';
+import 'package:unsplash_gallery_flutter_app/data/network/unsplash_api_client.dart';
+import 'package:unsplash_gallery_flutter_app/models/images_bloc.dart';
 
 class PagerPage extends StatefulWidget {
   static final tag = 'pager_page';
   List<ImageUnsplash> _initialImages;
-  Map<String, ImageUnsplash> _favorites;
   int _initialPage;
 
-  PagerPage(this._initialImages, this._favorites, this._initialPage);
+  PagerPage(this._initialImages, this._initialPage);
 
   @override
-  _PagerPageState createState() => _PagerPageState(_initialImages, _favorites, _initialPage);
+  _PagerPageState createState() =>
+      _PagerPageState(_initialImages, _initialPage);
 }
 
 class _PagerPageState extends State<PagerPage> {
   List<ImageUnsplash> _initialImages;
-  Map<String, ImageUnsplash> _favorites;
   int _initialPage;
+  UnsplashApiClient _apiClient = UnsplashApiClient();
+  bool _isLoading = false;
 
-  _PagerPageState(this._initialImages, this._favorites, this._initialPage);
+  _PagerPageState(this._initialImages, this._initialPage);
 
   Widget _buildFooter(ImageUnsplash img) {
-    return Container(
-      padding: EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
-      height: 76.0,
-      color: colorDarkBlue.withAlpha(40),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Container(
-            width: 55.0,
-            height: 55.0,
-            decoration: new BoxDecoration(
-              shape: BoxShape.circle,
-              image: new DecorationImage(
-                fit: BoxFit.fill,
-                image: CachedNetworkImageProvider(img.authorAvatar),
+    return GestureDetector(
+      onTap: () => setState(() => img.isFavorite = !img.isFavorite),
+      child: Container(
+        padding: const EdgeInsets.only(
+            left: 16.0, right: 16.0, top: 4.0, bottom: 4.0),
+        height: 56.0,
+        color: colorDarkBlue.withAlpha(40),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Container(
+              width: 48.0,
+              height: 48.0,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  fit: BoxFit.fill,
+                  image: CachedNetworkImageProvider(img.authorAvatar),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.only(left: 16.0),
-              child: Text(
-                img.authorName,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    color: colorWhite,
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold),
-                maxLines: 1,
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                child: Text(
+                  img.authorName,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: colorWhite,
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                ),
               ),
             ),
-          ),
-          Icon(
-            _favorites.containsKey(img.imgId)
-                ? Icons.favorite
-                : Icons.favorite_border,
-            color: _favorites.containsKey(img.imgId) ? Colors.red : colorWhite,
-          ),
-        ],
+            Icon(
+              img.isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: img.isFavorite ? Colors.red : colorWhite,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildPage(ImageUnsplash img) {
+  Widget _buildPagerItem(ImageUnsplash img) {
     return Stack(
       children: <Widget>[
         Positioned(
@@ -92,6 +97,14 @@ class _PagerPageState extends State<PagerPage> {
     );
   }
 
+  void loadNextPage(ImagesBloc imagesBloc, int nextPage) {
+    _isLoading = true;
+    _apiClient.getAllImages(nextPage).then((imagesList) {
+      imagesBloc.addition.add(imagesList);
+      _isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final imagesBloc = ImagesProvider.of(context);
@@ -103,9 +116,17 @@ class _PagerPageState extends State<PagerPage> {
           stream: imagesBloc.allImages,
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             return PageView.builder(
-                controller: PageController(initialPage: _initialPage),
-                itemBuilder: (BuildContext context, int index) =>
-                    _buildPage(snapshot.data[index]));
+              controller: PageController(initialPage: _initialPage),
+              itemBuilder: (BuildContext context, int index) {
+                List<ImageUnsplash> images = snapshot.data;
+//                print(
+//                    'Page = ${images.length ~/ 20}. Images List length = ${images.length}');
+                if (index >= (images.length - 5) && !_isLoading) {
+                  loadNextPage(imagesBloc, images.length ~/ 20 + 1);
+                }
+                return _buildPagerItem(images[index]);
+              },
+            );
           },
         ),
       ),
