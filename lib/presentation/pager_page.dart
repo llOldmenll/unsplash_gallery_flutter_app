@@ -109,26 +109,35 @@ class _PagerPageState extends State<PagerPage> {
   Widget build(BuildContext context) {
     final imagesBloc = ImagesProvider.of(context);
     return Scaffold(
-      body: Container(
-        color: colorDarkBlue,
-        child: StreamBuilder(
-          initialData: _initialImages,
-          stream: imagesBloc.allImages,
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            return PageView.builder(
-              controller: PageController(initialPage: _initialPage),
-              itemBuilder: (BuildContext context, int index) {
-                List<ImageUnsplash> images = snapshot.data;
+      body: Stack(
+        children: <Widget>[
+          Container(
+            color: colorDarkBlue,
+            child: StreamBuilder(
+              initialData: _initialImages,
+              stream: imagesBloc.allImages,
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                return PageView.builder(
+                  controller: PageController(initialPage: _initialPage),
+                  itemBuilder: (BuildContext context, int index) {
+                    List<ImageUnsplash> images = snapshot.data;
 //                print(
 //                    'Page = ${images.length ~/ 20}. Images List length = ${images.length}');
-                if (index >= (images.length - 5) && !_isLoading) {
-                  loadNextPage(imagesBloc, images.length ~/ 20 + 1);
-                }
-                return _buildPagerItem(images[index]);
+                    if (index >= (images.length - 5) && !_isLoading) {
+                      loadNextPage(imagesBloc, images.length ~/ 20 + 1);
+                    }
+                    return _buildPagerItem(images[index]);
+                  },
+                );
               },
-            );
-          },
-        ),
+            ),
+          ),
+          Positioned(
+            top: Theme.of(context).platform == TargetPlatform.iOS ? 32.0 : 26.0,
+            left: 4.0,
+            child: BackButton(color: colorWhite),
+          ),
+        ],
       ),
     );
   }
