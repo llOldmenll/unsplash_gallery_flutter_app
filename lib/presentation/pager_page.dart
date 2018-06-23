@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:unsplash_gallery_flutter_app/data/network/images_loader.dart';
 
 import 'package:unsplash_gallery_flutter_app/models/image.dart';
 import 'package:unsplash_gallery_flutter_app/colors.dart';
@@ -24,6 +25,7 @@ class _PagerPageState extends State<PagerPage> {
   int _initialPage;
   UnsplashApiClient _apiClient = UnsplashApiClient();
   bool _isLoading = false;
+  PageController _pageController;
 
   _PagerPageState(this._initialImages, this._initialPage);
 
@@ -97,7 +99,7 @@ class _PagerPageState extends State<PagerPage> {
     );
   }
 
-  void loadNextPage(ImagesBloc imagesBloc, int nextPage) {
+  _loadNextPage(ImagesBloc imagesBloc, int nextPage) {
     _isLoading = true;
     _apiClient.getAllImages(nextPage).then((imagesList) {
       imagesBloc.addition.add(imagesList);
@@ -109,35 +111,57 @@ class _PagerPageState extends State<PagerPage> {
   Widget build(BuildContext context) {
     final imagesBloc = ImagesProvider.of(context);
     return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          Container(
-            color: colorDarkBlue,
-            child: StreamBuilder(
-              initialData: _initialImages,
-              stream: imagesBloc.allImages,
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                return PageView.builder(
-                  controller: PageController(initialPage: _initialPage),
+      body: StreamBuilder(
+        initialData: _initialImages,
+        stream: imagesBloc.allImages,
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          return Stack(
+            children: <Widget>[
+              Container(
+                color: colorDarkBlue,
+                child: PageView.builder(
+                  controller: _pageController =
+                      PageController(initialPage: _initialPage),
                   itemBuilder: (BuildContext context, int index) {
                     List<ImageUnsplash> images = snapshot.data;
 //                print(
 //                    'Page = ${images.length ~/ 20}. Images List length = ${images.length}');
                     if (index >= (images.length - 5) && !_isLoading) {
-                      loadNextPage(imagesBloc, images.length ~/ 20 + 1);
+                      _loadNextPage(imagesBloc, images.length ~/ 20 + 1);
                     }
                     return _buildPagerItem(images[index]);
                   },
-                );
-              },
-            ),
-          ),
-          Positioned(
-            top: Theme.of(context).platform == TargetPlatform.iOS ? 32.0 : 26.0,
-            left: 4.0,
-            child: BackButton(color: colorWhite),
-          ),
-        ],
+                ),
+              ),
+              Positioned(
+                top: Theme.of(context).platform == TargetPlatform.iOS
+                    ? 32.0
+                    : 26.0,
+                left: 4.0,
+                child: BackButton(color: colorWhite),
+              ),
+//              Positioned(
+//                top: Theme.of(context).platform == TargetPlatform.iOS
+//                    ? 32.0
+//                    : 26.0,
+//                right: 4.0,
+//                child: IconButton(
+//                  icon: Icon(
+//                    Icons.file_download,
+//                    color: colorWhite,
+//                  ),
+//                  onPressed: () {
+//                    ImageUnsplash img =
+//                        snapshot.data[_pageController.page.toInt()];
+//                    ImagesLoader()
+//                        .downloadImage(img.imgId + '.jpg', img.fullImgUrl)
+//                        .then((answer) => print(answer));
+//                  },
+//                ),
+//              ),
+            ],
+          );
+        },
       ),
     );
   }

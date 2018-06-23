@@ -120,7 +120,7 @@ class _GridPageState extends State<GridPage> {
 //                    print(
 //                        'Page = $_pageNumber. Images List length = ${images.length}');
                         if (index >= (images.length - 10) && !_isLoading) {
-                          loadNextPage(imagesBloc);
+                          _loadNextPage(imagesBloc);
                         }
                         return _buildGridTile(index, images, imagesBloc);
                       },
@@ -139,7 +139,7 @@ class _GridPageState extends State<GridPage> {
     );
   }
 
-  void loadNextPage(ImagesBloc imagesBloc) {
+  _loadNextPage(ImagesBloc imagesBloc) {
     _isLoading = true;
     _apiClient.getAllImages(_pageNumber + 1).then((imagesList) {
       imagesBloc.addition.add(imagesList);
@@ -150,7 +150,7 @@ class _GridPageState extends State<GridPage> {
   @override
   Widget build(BuildContext context) {
     final imagesBloc = ImagesProvider.of(context);
-    if (_pageNumber == 0) loadNextPage(imagesBloc);
+    if (_pageNumber == 0) _loadNextPage(imagesBloc);
     return Scaffold(body: _photosGrid(imagesBloc));
   }
 }

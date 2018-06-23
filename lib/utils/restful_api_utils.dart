@@ -23,7 +23,7 @@ class RestfulApiUtils {
     });
   }
 
-  void _checkStatusCode(int statusCode, String headers){
+  _checkStatusCode(int statusCode, String headers) {
     if (statusCode < 200 || statusCode > 400 || json == null) {
       print(headers);
       throw new Exception("Error while fetching data");
