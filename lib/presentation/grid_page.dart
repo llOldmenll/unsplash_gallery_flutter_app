@@ -24,7 +24,6 @@ class _GridPageState extends State<GridPage> {
       int position, List<ImageUnsplash> images, ImagesBloc imagesBloc) {
     var img = images[position];
     return Container(
-//      key: Key(img.imgId),
       padding: const EdgeInsets.all(2.0),
       child: Stack(
         children: <Widget>[
