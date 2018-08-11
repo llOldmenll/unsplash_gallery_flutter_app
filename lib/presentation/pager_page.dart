@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/services.dart';
 import 'package:unsplash_gallery_flutter_app/data/network/images_loader.dart';
 
 import 'package:unsplash_gallery_flutter_app/models/image.dart';
@@ -21,11 +25,15 @@ class PagerPage extends StatefulWidget {
 }
 
 class _PagerPageState extends State<PagerPage> {
+  static const platform =
+      MethodChannel('unsplash_gallery_flutter_app/save_image');
+
+  UnsplashApiClient _apiClient = UnsplashApiClient();
   List<ImageUnsplash> _initialImages;
   int _initialPage;
-  UnsplashApiClient _apiClient = UnsplashApiClient();
   bool _isLoading = false;
   PageController _pageController;
+  bool _isSaving = false;
 
   _PagerPageState(this._initialImages, this._initialPage);
 
@@ -84,10 +92,11 @@ class _PagerPageState extends State<PagerPage> {
           right: 0.0,
           top: 0.0,
           bottom: 0.0,
-          child: Hero(
-            tag: img.imgId,
-            child: CachedNetworkImage(imageUrl: img.thumbImgUrl),
-          ),
+          child: _isSaving
+              ? Center(child: CircularProgressIndicator())
+              : Hero(
+                  tag: img.imgId,
+                  child: CachedNetworkImage(imageUrl: img.thumbImgUrl)),
         ),
         Positioned(
           left: 0.0,
@@ -107,6 +116,26 @@ class _PagerPageState extends State<PagerPage> {
     });
   }
 
+  Future<Null> _saveImageLocale(BuildContext context, String directoryName,
+      String fileName, Uint8List imgBytes) async {
+    String responseStatus;
+    Map<String, dynamic> map = {
+      'directoryName': directoryName,
+      'fileName': fileName,
+      'imgBytes': imgBytes
+    };
+
+    try {
+      responseStatus = await platform.invokeMethod('saveImage', map);
+    } on PlatformException catch (e) {
+      responseStatus = 'Failed to save image: ${e.message}';
+    }
+
+    setState(() => _isSaving = false);
+    Scaffold.of(context).showSnackBar(SnackBar(content: Text(responseStatus)));
+    print(responseStatus);
+  }
+
   @override
   Widget build(BuildContext context) {
     final imagesBloc = ImagesProvider.of(context);
@@ -124,8 +153,6 @@ class _PagerPageState extends State<PagerPage> {
                       PageController(initialPage: _initialPage),
                   itemBuilder: (BuildContext context, int index) {
                     List<ImageUnsplash> images = snapshot.data;
-//                print(
-//                    'Page = ${images.length ~/ 20}. Images List length = ${images.length}');
                     if (index >= (images.length - 5) && !_isLoading) {
                       _loadNextPage(imagesBloc, images.length ~/ 20 + 1);
                     }
@@ -140,25 +167,32 @@ class _PagerPageState extends State<PagerPage> {
                 left: 4.0,
                 child: BackButton(color: colorWhite),
               ),
-//              Positioned(
-//                top: Theme.of(context).platform == TargetPlatform.iOS
-//                    ? 32.0
-//                    : 26.0,
-//                right: 4.0,
-//                child: IconButton(
-//                  icon: Icon(
-//                    Icons.file_download,
-//                    color: colorWhite,
-//                  ),
-//                  onPressed: () {
-//                    ImageUnsplash img =
-//                        snapshot.data[_pageController.page.toInt()];
-//                    ImagesLoader()
-//                        .downloadImage(img.imgId + '.jpg', img.fullImgUrl)
-//                        .then((answer) => print(answer));
-//                  },
-//                ),
-//              ),
+              Positioned(
+                top: Theme.of(context).platform == TargetPlatform.iOS
+                    ? 32.0
+                    : 26.0,
+                right: 4.0,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.file_download,
+                    color: colorWhite,
+                  ),
+                  onPressed: () {
+                    if (Theme.of(context).platform == TargetPlatform.android) {
+                      setState(() => _isSaving = true);
+                      ImageUnsplash img =
+                          snapshot.data[_pageController.page.toInt()];
+                      ImagesLoader().downloadImage(img.fullImgUrl).then(
+                          (answer) => _saveImageLocale(context,
+                              'unsplash_flutter_app', img.imgId, answer));
+                    } else {
+                      Scaffold.of(context).showSnackBar(SnackBar(
+                          content:
+                              Text("IOS platform hasn't supported yet! :(")));
+                    }
+                  },
+                ),
+              ),
             ],
           );
         },
